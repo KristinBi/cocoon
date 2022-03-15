@@ -35,8 +35,7 @@ class FakeConfig extends Config {
   Future<GitHub> createGithubClient() async => githubClient!;
 
   @override
-  Future<GithubService> createGithubService() async =>
-      githubService ?? FakeGithubService();
+  Future<GithubService> createGithubService() async => githubService ?? FakeGithubService();
 
   @override
   Set<String> get rollerAccounts =>
@@ -48,9 +47,7 @@ class FakeConfig extends Config {
       };
 
   @override
-  String get overrideTreeStatusLabel =>
-      overrideTreeStatusLabelValue ??
-      'warning: land on red to fix tree breakage';
+  String get overrideTreeStatusLabel => overrideTreeStatusLabelValue ?? 'warning: land on red to fix tree breakage';
 
   @override
   String get autosubmitLabel => autosubmitLabelValue ?? 'autosubmit';

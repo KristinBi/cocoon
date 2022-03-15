@@ -3,11 +3,7 @@
 // found in the LICENSE file.
 
 String generateWebhookEvent(
-    {String? labelName,
-    String? autosubmitLabel,
-    String? repoName,
-    String? login,
-    String? authorAssociation}) {
+    {String? labelName, String? autosubmitLabel, String? repoName, String? login, String? authorAssociation}) {
   return '''{
       "action": "open",
       "number": 1598,
