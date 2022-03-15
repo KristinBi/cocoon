@@ -30,7 +30,8 @@ class CheckPullRequest extends RequestHandler {
     final RepositorySlug slug = pullRequest.base!.repo!.slug();
 
     final GithubService gitHub = await config.createGithubService();
-    final _AutoMergeQueryResult queryResult = await _parseQueryData(pullRequest, gitHub);
+    final _AutoMergeQueryResult queryResult =
+        await _parseQueryData(pullRequest, gitHub);
     if (await shouldMergePullRequest(queryResult, slug, gitHub)) {
       log.info('Merge the pull request: ${queryResult.number}');
       // TODO(Kristin): Merge this PR. https://github.com/flutter/flutter/issues/100088
@@ -53,10 +54,11 @@ class CheckPullRequest extends RequestHandler {
   /// A pull request should be merged on either cases:
   /// 1) All tests have finished running and satified basic merge requests
   /// 2) Not all tests finish but this is a clean revert of the Tip of Tree (TOT) commit.
-  Future<bool> shouldMergePullRequest(
-      _AutoMergeQueryResult queryResult, RepositorySlug slug, GithubService github) async {
+  Future<bool> shouldMergePullRequest(_AutoMergeQueryResult queryResult,
+      RepositorySlug slug, GithubService github) async {
     // Check the label again before merge the pull request.
-    final bool hasAutosubmitLabel = queryResult.labels.any((label) => label == config.autosubmitLabel);
+    final bool hasAutosubmitLabel =
+        queryResult.labels.any((label) => label == config.autosubmitLabel);
     if (queryResult.shouldMerge && hasAutosubmitLabel) {
       return true;
     }
@@ -71,11 +73,14 @@ class CheckPullRequest extends RequestHandler {
   /// TOT commit, empty `files` in `GitHubComparison` validates a clean revert of TOT commit.
   ///
   /// Note: [compareCommits] expects base commit first, and then head commit.
-  Future<bool> isTOTRevert(String headSha, RepositorySlug slug, GithubService github) async {
-    final RepositoryCommit secondTotCommit = await github.getCommit(slug, 'HEAD~');
+  Future<bool> isTOTRevert(
+      String headSha, RepositorySlug slug, GithubService github) async {
+    final RepositoryCommit secondTotCommit =
+        await github.getCommit(slug, 'HEAD~');
     log.info('Current commit is: $headSha');
     log.info('Second TOT commit is: ${secondTotCommit.sha}');
-    final GitHubComparison githubComparison = await github.compareTwoCommits(slug, secondTotCommit.sha!, headSha);
+    final GitHubComparison githubComparison =
+        await github.compareTwoCommits(slug, secondTotCommit.sha!, headSha);
     final bool filesIsEmpty = githubComparison.files!.isEmpty;
     if (filesIsEmpty) {
       log.info('This is a TOT revert. Merge ignoring tests statuses.');
@@ -86,11 +91,13 @@ class CheckPullRequest extends RequestHandler {
   /// Removes the 'autosubmit' label if this PR should not be merged.
   ///
   /// Returns true if we successfully remove the label.
-  Future<bool> _removeLabel(
-      _AutoMergeQueryResult queryResult, GithubService gitHub, RepositorySlug slug, String label) async {
+  Future<bool> _removeLabel(_AutoMergeQueryResult queryResult,
+      GithubService gitHub, RepositorySlug slug, String label) async {
     final String commentBody = queryResult.removalMessage;
-    await gitHub.createComment(slug, queryResult.number, commentBody, queryResult.sha);
-    final bool result = await gitHub.removeLabel(slug, queryResult.number, config.autosubmitLabel);
+    await gitHub.createComment(
+        slug, queryResult.number, commentBody, queryResult.sha);
+    final bool result = await gitHub.removeLabel(
+        slug, queryResult.number, config.autosubmitLabel);
     if (!result) {
       log.info('Failed to remove the autosubmit label.');
       return false;
@@ -101,7 +108,8 @@ class CheckPullRequest extends RequestHandler {
   /// Parses the Rest API query to a [_AutoMergeQueryResult].
   ///
   /// This method will not return null, but may return an empty list.
-  Future<_AutoMergeQueryResult> _parseQueryData(PullRequest pr, GithubService gitHub) async {
+  Future<_AutoMergeQueryResult> _parseQueryData(
+      PullRequest pr, GithubService gitHub) async {
     // This is used to remove the bot label as it requires manual intervention.
     final bool isConflicting = pr.mergeable == false;
     // This is used to skip landing until we are sure the PR is mergeable.
@@ -117,7 +125,8 @@ class CheckPullRequest extends RequestHandler {
       statuses.addAll(await gitHub.getStatuses(slug, pr.head!.sha!));
     }
 
-    final List<PullRequestReview> reviews = await gitHub.getReviews(slug, pr.number!);
+    final List<PullRequestReview> reviews =
+        await gitHub.getReviews(slug, pr.number!);
 
     final Set<String?> changeRequestAuthors = <String?>{};
     final Set<_FailureDetail> failures = <_FailureDetail>{};
@@ -126,8 +135,9 @@ class CheckPullRequest extends RequestHandler {
     final String? authorAssociation = pr.authorAssociation;
 
     // List of labels associated with the pull request.
-    final List<String> labelNames =
-        (pr.labels as List<IssueLabel>).map<String>((IssueLabel labelMap) => labelMap.name).toList();
+    final List<String> labelNames = (pr.labels as List<IssueLabel>)
+        .map<String>((IssueLabel labelMap) => labelMap.name)
+        .toList();
 
     final bool hasApproval = config.rollerAccounts.contains(author) ||
         _checkApproval(
@@ -194,7 +204,8 @@ class CheckPullRequest extends RequestHandler {
       }
 
       if (!treeStatusExists) {
-        failures.add(_FailureDetail('tree status $treeStatusName', 'https://flutter-dashboard.appspot.com/#/build'));
+        failures.add(_FailureDetail('tree status $treeStatusName',
+            'https://flutter-dashboard.appspot.com/#/build'));
       }
     }
 
@@ -203,7 +214,8 @@ class CheckPullRequest extends RequestHandler {
     for (RepositoryStatus status in statuses) {
       final String? name = status.context;
       if (status.state != 'success') {
-        if (notInAuthorsControl.contains(name) && labels.contains(overrideTreeStatusLabel)) {
+        if (notInAuthorsControl.contains(name) &&
+            labels.contains(overrideTreeStatusLabel)) {
           continue;
         }
         allSuccess = false;
@@ -278,7 +290,8 @@ bool _checkApproval(
   }
 
   final bool approved = (approvers.length > 1) && changeRequestAuthors.isEmpty;
-  log.info('PR approved $approved, approvers: $approvers, change request authors: $changeRequestAuthors');
+  log.info(
+      'PR approved $approved, approvers: $approvers, change request authors: $changeRequestAuthors');
   return (approvers.length > 1) && changeRequestAuthors.isEmpty;
 }
 
@@ -339,7 +352,11 @@ class _AutoMergeQueryResult {
 
   /// Whether the auto-merge label should be removed from this PR.
   bool get shouldRemoveLabel =>
-      !hasApprovedReview || changeRequestAuthors.isNotEmpty || failures.isNotEmpty || emptyChecks || isConflicting;
+      !hasApprovedReview ||
+      changeRequestAuthors.isNotEmpty ||
+      failures.isNotEmpty ||
+      emptyChecks ||
+      isConflicting;
 
   /// The comment message we want to send when removing the label.
   String get removalMessage {
@@ -347,25 +364,30 @@ class _AutoMergeQueryResult {
       return '';
     }
     final StringBuffer buffer = StringBuffer();
-    buffer.writeln('This pull request is not suitable for automatic merging in its '
+    buffer.writeln(
+        'This pull request is not suitable for automatic merging in its '
         'current state.');
     buffer.writeln();
     if (!hasApprovedReview && changeRequestAuthors.isEmpty) {
-      buffer.writeln('- Please get at least one approved review if you are already '
+      buffer.writeln(
+          '- Please get at least one approved review if you are already '
           'a member or two member reviews if you are not a member before re-applying this '
           'label. __Reviewers__: If you left a comment approving, please use '
           'the "approve" review action instead.');
     }
     for (String? author in changeRequestAuthors) {
-      buffer.writeln('- This pull request has changes requested by @$author. Please '
+      buffer.writeln(
+          '- This pull request has changes requested by @$author. Please '
           'resolve those before re-applying the label.');
     }
     for (_FailureDetail detail in failures) {
-      buffer.writeln('- The status or check suite ${detail.markdownLink} has failed. Please fix the '
+      buffer.writeln(
+          '- The status or check suite ${detail.markdownLink} has failed. Please fix the '
           'issues identified (or deflake) before re-applying this label.');
     }
     if (emptyChecks) {
-      buffer.writeln('- This commit has no checks. Please check that ci.yaml validation has started'
+      buffer.writeln(
+          '- This commit has no checks. Please check that ci.yaml validation has started'
           ' and there are multiple checks. If not, try uploading an empty commit.');
     }
     if (isConflicting) {
